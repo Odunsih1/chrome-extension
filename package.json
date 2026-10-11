@@ -1,0 +1,10 @@
+{
+  "name": "aria-ease-component-audit-cli",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "audit": "node ./aria-ease-component-audit.mjs",
+    "service": "node ./service.mjs",
+    "test": "node --test --test-concurrency=1 ./test/*.test.mjs"
+  }
+}

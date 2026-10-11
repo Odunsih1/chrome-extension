@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aria-Ease audit</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body class="light-body">
+  <h1>Aria-Ease combobox audit</h1>
+  <p class="muted">This MVP selects comboboxes only.</p>
+  <label for="service-url">Local service URL</label>
+  <input id="service-url" type="url" autocomplete="off">
+  <label for="token">Bearer token</label>
+  <input id="token" type="password" autocomplete="off">
+  <label for="root">Approved project root</label>
+  <input id="root" type="text" autocomplete="off" placeholder="/path/to/exprmnts">
+  <button id="select">Select component</button>
+  <section id="selection" class="hidden">
+    <h2>Selected component</h2>
+    <pre id="metadata"></pre>
+    <p class="muted">The audit opens a fresh Playwright page; it does not inspect this tab's live state, cookies, session, or transient DOM.</p>
+    <button id="run">Run audit</button>
+    <button id="clear">Clear selection</button>
+  </section>
+  <p id="status" role="status"></p>
+  <section id="result" class="hidden">
+    <h2 id="result-status"></h2>
+    <p id="result-summary" class="muted"></p>
+    <div id="result-findings"></div>
+    <!-- <details>
+      <summary>All checks</summary>
+      <pre id="result-details"></pre>
+    </details> -->
+  </section>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

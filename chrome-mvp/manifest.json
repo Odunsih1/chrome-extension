@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Aria-Ease Component Auditor",
+  "version": "0.1.0",
+  "description": "Select and audit a combobox with the local Aria-Ease audit service.",
+  "action": {
+    "default_title": "Aria-Ease audit",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "http://localhost/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

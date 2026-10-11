@@ -1,4 +1,4 @@
-# Aria-Ease local audit service
+# Aria-Ease local audit service (Experimental)
 
 The CLI and service reuse the existing Aria-Ease DSL compiler and Playwright
 contract runner. The service is intended for local development and does not
@@ -44,7 +44,7 @@ curl http://127.0.0.1:4317/health
 The response is:
 
 ```json
-{"status":"ok"}
+{ "status": "ok" }
 ```
 
 The health response never includes the authentication token.
@@ -119,5 +119,7 @@ URL in a separate Playwright browser context; it does not inspect or preserve
 the live DOM state, cookies, authentication, or transient state of a Chrome
 tab. Login flows and authenticated external pages are not automated by this
 service.
+
 # chrome-extension
+
 # chrome-extension
