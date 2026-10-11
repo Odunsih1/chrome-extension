@@ -120,3 +120,4 @@ the live DOM state, cookies, authentication, or transient state of a Chrome
 tab. Login flows and authenticated external pages are not automated by this
 service.
 # chrome-extension
+# chrome-extension
