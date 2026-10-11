@@ -1,4 +1,4 @@
-# Aria-Ease local audit service (Experimental)
+# Aria-Ease local audit service (Experimental V1)
 
 The CLI and service reuse the existing Aria-Ease DSL compiler and Playwright
 contract runner. The service is intended for local development and does not
