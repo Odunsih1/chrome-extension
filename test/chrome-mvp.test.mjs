@@ -86,6 +86,21 @@ test("popup supports contextual all-component discovery without starting batch a
   assert.match(discovery, /uniqueElementSelector/);
 });
 
+test("discovered components are highlighted and can be cleared", async () => {
+  const [html, popup, discovery, cleanup] = await Promise.all([
+    readFile(new URL("../chrome-mvp/popup.html", import.meta.url), "utf8"),
+    readFile(new URL("../chrome-mvp/popup.js", import.meta.url), "utf8"),
+    readFile(new URL("../chrome-mvp/discover-components.js", import.meta.url), "utf8"),
+    readFile(new URL("../chrome-mvp/clear-discovery-highlights.js", import.meta.url), "utf8")
+  ]);
+  assert.match(html, /id="clear-discovery"/);
+  assert.match(popup, /clear-discovery-highlights\.js/);
+  assert.match(discovery, /aria-ease-discovered-component/);
+  assert.match(discovery, /outline: 3px solid #2563eb/);
+  assert.match(cleanup, /classList\.remove/);
+  assert.match(cleanup, /highlight-style/);
+});
+
 test("groups repeated rule findings without merging distinct targets or expectations", () => {
   const findings = [
     { id: "combo:dynamic:dynamic[0].assertions[0]", status: "fail", target: "input", expected: "true", scenario: "opens", message: "first" },

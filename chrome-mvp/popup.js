@@ -67,6 +67,7 @@ async function startSelection() {
     setStatus("Scanning this page for supported components...");
     return;
   }
+  await removeDiscoveryHighlights(tab);
   clearSelection();
   await chrome.storage.local.set({ latestSelection: null, latestSelectionError: "", selectionCancelled: false });
   await chrome.scripting.executeScript({
@@ -74,6 +75,20 @@ async function startSelection() {
     files: ["component-strategies.js", "selector.js", "content-script.js"]
   });
   setStatus("Hover over a combobox and click it. Press Escape to cancel.");
+}
+
+async function removeDiscoveryHighlights(tab = null) {
+  const targetTab = tab || await activeTab();
+  await chrome.scripting.executeScript({
+    target: { tabId: targetTab.id },
+    files: ["clear-discovery-highlights.js"]
+  });
+}
+
+async function clearDiscoveryAndHighlights() {
+  await removeDiscoveryHighlights();
+  clearDiscovery();
+  setStatus("Component highlights cleared.");
 }
 
 function showDiscovery(value) {
@@ -108,7 +123,10 @@ function updateScope() {
   const all = $("audit-scope").value === "all";
   $("select").textContent = all ? "Scan page" : "Select component";
   if (all) clearSelection();
-  else clearDiscovery();
+  else {
+    clearDiscovery();
+    removeDiscoveryHighlights().catch((error) => setStatus(error.message, "error"));
+  }
   setStatus(all ? "Ready to scan this page." : "Ready to select a component.");
 }
 
@@ -219,6 +237,7 @@ $("select").addEventListener("click", () => startSelection().catch((error) => se
 $("run").addEventListener("click", () => runAudit().catch((error) => setStatus(error.message, "error")));
 $("clear").addEventListener("click", clearSelection);
 $("clear-token").addEventListener("click", () => clearToken().catch((error) => setStatus(error.message, "error")));
+$("clear-discovery").addEventListener("click", () => clearDiscoveryAndHighlights().catch((error) => setStatus(error.message, "error")));
 $("audit-scope").addEventListener("change", updateScope);
 chrome.runtime.onMessage.addListener((message, sender) => {
   if (message.type === "aria-ease-selection" && sender.tab) {
