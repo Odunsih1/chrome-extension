@@ -86,7 +86,6 @@ function validateRequest(body, approvedRoots) {
     if (/[\0\r\n]/.test(body.targetSelector) || /^(javascript|xpath):|^(xpath|text|id|role|nth|visible)=/i.test(body.targetSelector) || body.targetSelector.includes(">>")) {
       throw new Error("targetSelector must be a CSS selector");
     }
-    if (body.component !== "combobox") throw new Error("targetSelector is currently supported only for combobox audits");
   }
   if (typeof body.root !== "string" || body.root.length === 0) throw new Error("root must be a non-empty string");
   const root = path.resolve(body.root);

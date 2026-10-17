@@ -105,14 +105,16 @@ button:hover {
 }
 
 #select,
-#run {
+#run,
+#run-all {
   border-color: transparent;
   background: linear-gradient(135deg, #9db4fd 0%, #2563eb 100%);
   color: #fff;
 }
 
 #select:hover,
-#run:hover {
+#run:hover,
+#run-all:hover {
   background-position: 100% 0;
   box-shadow: var(--ds-shadow-soft);
 }

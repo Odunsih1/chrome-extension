@@ -97,8 +97,20 @@ test("discovered components are highlighted and can be cleared", async () => {
   assert.match(popup, /clear-discovery-highlights\.js/);
   assert.match(discovery, /aria-ease-discovered-component/);
   assert.match(discovery, /outline: 3px solid #2563eb/);
+  assert.match(discovery, /badge\.textContent = candidate\.label/);
   assert.match(cleanup, /classList\.remove/);
   assert.match(cleanup, /highlight-style/);
+});
+
+test("all-component discovery exposes sequential batch execution", async () => {
+  const [html, popup] = await Promise.all([
+    readFile(new URL("../chrome-mvp/popup.html", import.meta.url), "utf8"),
+    readFile(new URL("../chrome-mvp/popup.js", import.meta.url), "utf8")
+  ]);
+  assert.match(html, /id="run-all"/);
+  assert.match(popup, /async function runAllAudits/);
+  assert.match(popup, /for \(const \[index, target\] of discovery\.targets\.entries\(\)\)/);
+  assert.match(popup, /component: target\.component/);
 });
 
 test("groups repeated rule findings without merging distinct targets or expectations", () => {

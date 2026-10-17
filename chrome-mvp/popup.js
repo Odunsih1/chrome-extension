@@ -233,10 +233,62 @@ async function runAudit() {
   setStatus(body.status === "passed" ? "Audit passed." : body.status === "skipped" ? "Audit completed with skipped checks." : "Contract execution completed with failures.", body.status === "passed" ? "success" : "error");
 }
 
+async function requestAudit({ serviceUrl, token, root, tab, target }) {
+  const response = await fetch(`${serviceUrl}/api/audits`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(buildAuditRequest({
+      url: tab.url,
+      root,
+      component: target.component,
+      targetSelector: target.selector
+    }))
+  });
+  let body;
+  try { body = await response.json(); } catch { throw new Error(`Service returned HTTP ${response.status} without JSON.`); }
+  if (response.status === 401) {
+    await clearSessionToken();
+    $("token").value = "";
+  }
+  if (!response.ok && response.status !== 422) throw new Error(responseError(response.status, body));
+  return body;
+}
+
+async function runAllAudits() {
+  if (!discovery?.targets?.length) throw new Error("Scan the page before running audits.");
+  const tab = await activeTab();
+  validateSelectionContext(discovery, tab);
+  const settingsValue = await saveSettings();
+  const results = [];
+  $("run-all").disabled = true;
+  try {
+    for (const [index, target] of discovery.targets.entries()) {
+      setStatus(`Running audit ${index + 1} of ${discovery.targets.length}: ${target.label}...`);
+      results.push({ target, body: await requestAudit({ ...settingsValue, tab, target }) });
+    }
+  } finally {
+    $("run-all").disabled = false;
+  }
+  const passed = results.filter(({ body }) => body.status === "passed").length;
+  $("result").classList.remove("hidden");
+  $("result-status").textContent = `Batch audit: ${passed}/${results.length} passed`;
+  $("result-status").className = passed === results.length ? "success" : "error";
+  $("result-summary").textContent = `${results.length} discovered components audited sequentially.`;
+  $("result-findings").innerHTML = results.map(({ target, body }) => `
+    <article class="finding severity-${body.status === "passed" ? "pass" : "fail"}">
+      <p class="finding-title">${escapeHtml(target.label)} — ${escapeHtml(target.selector)}</p>
+      <div class="finding-meta">${escapeHtml(body.status)}</div>
+      ${renderFindingsHtml(body)}
+    </article>
+  `).join("");
+  setStatus("Batch audit complete.", passed === results.length ? "success" : "error");
+}
+
 $("select").addEventListener("click", () => startSelection().catch((error) => setStatus(error.message, "error")));
 $("run").addEventListener("click", () => runAudit().catch((error) => setStatus(error.message, "error")));
 $("clear").addEventListener("click", clearSelection);
 $("clear-token").addEventListener("click", () => clearToken().catch((error) => setStatus(error.message, "error")));
+$("run-all").addEventListener("click", () => runAllAudits().catch((error) => setStatus(error.message, "error")));
 $("clear-discovery").addEventListener("click", () => clearDiscoveryAndHighlights().catch((error) => setStatus(error.message, "error")));
 $("audit-scope").addEventListener("change", updateScope);
 chrome.runtime.onMessage.addListener((message, sender) => {

@@ -63,7 +63,6 @@ export async function runAudit(request) {
     if (/[\0\r\n]/.test(request.targetSelector) || /^(javascript|xpath):|^(xpath|text|id|role|nth|visible)=/i.test(request.targetSelector) || request.targetSelector.includes(">>")) {
       throw new Error("targetSelector must be a CSS selector");
     }
-    if (component !== "combobox") throw new Error("targetSelector is currently supported only for combobox audits");
   }
   if (request.scenario !== undefined) {
     throw new Error("scenario selection is not supported by the existing contract runner");
