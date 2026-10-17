@@ -5,8 +5,8 @@ import http from "node:http";
 import path from "node:path";
 import process from "node:process";
 import { runAudit } from "./audit.mjs";
+import { runtimePaths } from "./paths.mjs";
 
-const defaultApprovedRoot = path.resolve(import.meta.dirname, "..", "frontend-testing-ground");
 const localhostOrigin = /^(https?:\/\/)(localhost|127\.0\.0\.1)(:\d+)?$/;
 
 function isApprovedRoot(candidate, approvedRoots) {
@@ -114,7 +114,7 @@ function validateRequest(body, approvedRoots) {
 
 export function createAuditService({
   port = 4317,
-  approvedRoots = [defaultApprovedRoot],
+  approvedRoots = runtimePaths.approvedRoots,
   auditRunner = runAudit,
   token = process.env.ARIA_EASE_AUTH_TOKEN?.trim() || randomBytes(32).toString("hex"),
   extensionOrigins = (process.env.ARIA_EASE_EXTENSION_ORIGINS || "").split(",").map((origin) => origin.trim()).filter(Boolean)

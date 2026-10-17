@@ -1,8 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { runtimePaths } from "./paths.mjs";
 
-const packageRoot = path.resolve(import.meta.dirname, "..", "aria-ease");
+const packageRoot = runtimePaths.ariaEaseRoot;
 
 async function importAriaEaseBuild(relativePath) {
   const modulePath = path.join(packageRoot, relativePath);

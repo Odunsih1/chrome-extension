@@ -30,7 +30,7 @@ async function saveSettings() {
   const token = $("token").value.trim();
   const root = $("root").value.trim();
   if (!token) throw new Error("Enter the bearer token printed by the local service.");
-  if (!root) throw new Error("Enter the approved exprmnts project root.");
+  if (!root) throw new Error("Enter an approved project root.");
   await chrome.storage.local.set({ serviceUrl, token, root });
   return { serviceUrl, token, root };
 }
