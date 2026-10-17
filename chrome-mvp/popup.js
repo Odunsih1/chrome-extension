@@ -47,7 +47,7 @@ async function startSelection() {
   const tab = await activeTab();
   clearSelection();
   await chrome.storage.local.set({ latestSelection: null, latestSelectionError: "", selectionCancelled: false });
-  await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["content-script.js"] });
+  await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["selector.js", "content-script.js"] });
   setStatus("Hover over a combobox and click it. Press Escape to cancel.");
 }
 
