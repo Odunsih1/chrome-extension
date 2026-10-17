@@ -3,7 +3,7 @@ import { after, before, test } from "node:test";
 import path from "node:path";
 import { createAuditService } from "../service.mjs";
 
-const root = path.resolve(import.meta.dirname, "..", "..", "exprmnts");
+const root = path.resolve(import.meta.dirname, "..", "..", "frontend-testing-ground");
 const harnessUrl = "http://127.0.0.1:5173/test-harness?component=combobox";
 let service;
 let baseUrl;

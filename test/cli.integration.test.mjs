@@ -8,7 +8,7 @@ import { test, after } from "node:test";
 
 const run = promisify(execFile);
 const cli = path.resolve(import.meta.dirname, "..", "aria-ease-component-audit.mjs");
-const root = path.resolve(import.meta.dirname, "..", "..", "exprmnts");
+const root = path.resolve(import.meta.dirname, "..", "..", "frontend-testing-ground");
 const harnessUrl = "http://127.0.0.1:5173/test-harness?component=combobox";
 
 async function runCli(args) {

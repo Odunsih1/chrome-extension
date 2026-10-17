@@ -2,9 +2,26 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const packageRoot = path.resolve(import.meta.dirname, "..", "package");
-const testApi = await import(pathToFileURL(path.join(packageRoot, "dist/src/utils/test/index.js")));
-const dslApi = await import(pathToFileURL(path.join(packageRoot, "dist/src/utils/test/dsl/index.js")));
+const packageRoot = path.resolve(import.meta.dirname, "..", "aria-ease");
+
+async function importAriaEaseBuild(relativePath) {
+  const modulePath = path.join(packageRoot, relativePath);
+  try {
+    return await import(pathToFileURL(modulePath));
+  } catch (error) {
+    if (error?.code === "ERR_MODULE_NOT_FOUND") {
+      throw new Error(
+        `Aria-Ease build output was not found at ${modulePath}. ` +
+        "Build the sibling aria-ease repository with `npm run build` before starting the audit service.",
+        { cause: error }
+      );
+    }
+    throw error;
+  }
+}
+
+const testApi = await importAriaEaseBuild("dist/src/utils/test/index.js");
+const dslApi = await importAriaEaseBuild("dist/src/utils/test/dsl/index.js");
 
 export const strictnessValues = new Set(["minimal", "balanced", "strict", "paranoid"]);
 export const timeoutFields = ["actionTimeoutMs", "assertionTimeoutMs", "navigationTimeoutMs", "componentReadyTimeoutMs"];
@@ -97,6 +114,39 @@ export async function runAudit(request) {
       url,
       status: result.failures.length > 0 ? "failed" : result.skipped.length > 0 ? "skipped" : "passed",
       ...result
+    };
+    if (request.report?.path) await writeReport(request.report.path, report);
+    return report;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const failure = `Execution error: ${message}`;
+    const report = {
+      component,
+      url,
+      status: "failed",
+      passes: [],
+      failures: [failure],
+      skipped: [],
+      warnings: [],
+      findings: [
+        {
+          id: `${component}:static:execution`,
+          status: "fail",
+          level: "required",
+          phase: "static",
+          rule: "contract-runner",
+          message: failure
+        },
+        {
+          id: `${component}:dynamic:execution`,
+          status: "fail",
+          level: "required",
+          phase: "dynamic",
+          rule: "contract-runner",
+          scenario: "Contract runner execution",
+          message: failure
+        }
+      ]
     };
     if (request.report?.path) await writeReport(request.report.path, report);
     return report;

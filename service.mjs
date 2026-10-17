@@ -6,7 +6,7 @@ import path from "node:path";
 import process from "node:process";
 import { runAudit } from "./audit.mjs";
 
-const defaultApprovedRoot = path.resolve(import.meta.dirname, "..", "exprmnts");
+const defaultApprovedRoot = path.resolve(import.meta.dirname, "..", "frontend-testing-ground");
 const localhostOrigin = /^(https?:\/\/)(localhost|127\.0\.0\.1)(:\d+)?$/;
 
 function isApprovedRoot(candidate, approvedRoots) {
