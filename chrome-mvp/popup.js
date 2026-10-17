@@ -1,5 +1,6 @@
 import { buildAuditRequest, responseError, validateTargetUrl } from "./request.mjs";
 import { summarizeResult, renderFindingsHtml } from "./findings.mjs";
+import { createSelectionContext, validateSelectionContext } from "./selection-context.mjs";
 
 const DEFAULT_SERVICE_URL = "http://127.0.0.1:4317";
 const $ = (id) => document.getElementById(id);
@@ -66,6 +67,7 @@ function clearRenderedResult() {
 
 function clearSelection() {
   selection = null;
+  chrome.storage.local.set({ latestSelection: null, latestSelectionError: "", selectionCancelled: false }).catch(() => {});
   $("selection").classList.add("hidden");
   clearRenderedResult();
   setStatus("Selection cleared.");
@@ -110,6 +112,12 @@ async function runAudit() {
   setStatus("Running audit...");
   const { serviceUrl, token, root } = await saveSettings();
   const tab = await activeTab();
+  try {
+    validateSelectionContext(selection, tab);
+  } catch (error) {
+    clearSelection();
+    throw error;
+  }
   const response = await fetch(`${serviceUrl}/api/audits`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -143,8 +151,10 @@ async function runAudit() {
 $("select").addEventListener("click", () => startSelection().catch((error) => setStatus(error.message, "error")));
 $("run").addEventListener("click", () => runAudit().catch((error) => setStatus(error.message, "error")));
 $("clear").addEventListener("click", clearSelection);
-chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === "aria-ease-selection") showSelection(message.selection);
+chrome.runtime.onMessage.addListener((message, sender) => {
+  if (message.type === "aria-ease-selection" && sender.tab) {
+    showSelection(createSelectionContext(message.selection, sender.tab));
+  }
   if (message.type === "aria-ease-selection-cancelled") setStatus("Selection cancelled.");
   if (message.type === "aria-ease-selection-error") setStatus(message.message, "error");
 });
