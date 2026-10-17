@@ -51,6 +51,7 @@ async function clearToken() {
 async function activeTab() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tabs[0]?.id || !tabs[0].url) throw new Error("No inspectable active tab is available.");
+  $("page-url").value = tabs[0].url;
   validateTargetUrl(tabs[0].url);
   return tabs[0];
 }
@@ -313,6 +314,7 @@ chrome.storage.onChanged.addListener((changes) => {
 
 async function restoreSelectionState() {
   await settings();
+  await activeTab();
   const state = await chrome.storage.local.get({
     latestSelection: null,
     latestSelectionError: "",

@@ -113,6 +113,17 @@ test("all-component discovery exposes sequential batch execution", async () => {
   assert.match(popup, /component: target\.component/);
 });
 
+test("popup displays the active tab URL as a read-only audit target", async () => {
+  const [html, popup] = await Promise.all([
+    readFile(new URL("../chrome-mvp/popup.html", import.meta.url), "utf8"),
+    readFile(new URL("../chrome-mvp/popup.js", import.meta.url), "utf8")
+  ]);
+  assert.match(html, /id="page-url"[^>]*readonly/);
+  assert.match(html, /Automatically taken from the active tab/);
+  assert.match(popup, /\$\("page-url"\)\.value = tabs\[0\]\.url/);
+  assert.match(popup, /async function restoreSelectionState[\s\S]*await activeTab\(\)/);
+});
+
 test("groups repeated rule findings without merging distinct targets or expectations", () => {
   const findings = [
     { id: "combo:dynamic:dynamic[0].assertions[0]", status: "fail", target: "input", expected: "true", scenario: "opens", message: "first" },

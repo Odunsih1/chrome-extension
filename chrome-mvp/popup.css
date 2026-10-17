@@ -72,6 +72,17 @@ select {
   color: var(--text-primary);
 }
 
+input[readonly] {
+  background: var(--section-tone-b);
+  color: var(--text-medium);
+}
+
+.field-help {
+  margin: 3px 0 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
 input:hover,
 input:focus,
 select:hover,
