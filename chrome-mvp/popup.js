@@ -2,11 +2,13 @@ import { buildAuditRequest, responseError, validateTargetUrl } from "./request.m
 import { summarizeResult, renderFindingsHtml } from "./findings.mjs";
 import { createSelectionContext, validateSelectionContext } from "./selection-context.mjs";
 import { clearSessionToken, migrateLegacyToken, saveSessionToken } from "./token-storage.mjs";
+import { buildExcelReport, reportFilename } from "./excel-report.mjs";
 
 const DEFAULT_SERVICE_URL = "http://127.0.0.1:4317";
 const $ = (id) => document.getElementById(id);
 let selection = null;
 let discovery = null;
+let lastAuditReport = null;
 
 function setStatus(message, kind = "") {
   $("status").textContent = message;
@@ -142,8 +144,10 @@ function showSelection(value) {
 }
 
 function clearRenderedResult() {
+  lastAuditReport = null;
   $("result").classList.add("hidden");
   $("result-findings").replaceChildren();
+  $("export-excel").classList.add("hidden");
   // $("result-details").textContent = "";
 }
 
@@ -225,6 +229,12 @@ async function runAudit() {
     `${summary.warnings} warnings · ${summary.skipped} skipped. ` +
     `Findings: ${summary.findingGroups} grouped rules · ${summary.findingOccurrences} observations.`;
   renderFindings(body);
+  lastAuditReport = {
+    url: tab.url,
+    generatedAt: new Date().toISOString(),
+    results: [{ target: { component: "combobox", label: "Combobox", selector: selection.selector }, body }]
+  };
+  $("export-excel").classList.remove("hidden");
   /* $("result-details").textContent = JSON.stringify({
     passes: body.passes || [],
     failures: body.failures || [],
@@ -282,7 +292,20 @@ async function runAllAudits() {
       ${renderFindingsHtml(body)}
     </article>
   `).join("");
+  lastAuditReport = { url: tab.url, generatedAt: new Date().toISOString(), results };
+  $("export-excel").classList.remove("hidden");
   setStatus("Batch audit complete.", passed === results.length ? "success" : "error");
+}
+
+function exportExcelReport() {
+  if (!lastAuditReport) throw new Error("Run an audit before downloading a report.");
+  const blob = new Blob([buildExcelReport(lastAuditReport)], { type: "application/vnd.ms-excel;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = reportFilename(lastAuditReport);
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 $("select").addEventListener("click", () => startSelection().catch((error) => setStatus(error.message, "error")));
@@ -290,6 +313,9 @@ $("run").addEventListener("click", () => runAudit().catch((error) => setStatus(e
 $("clear").addEventListener("click", clearSelection);
 $("clear-token").addEventListener("click", () => clearToken().catch((error) => setStatus(error.message, "error")));
 $("run-all").addEventListener("click", () => runAllAudits().catch((error) => setStatus(error.message, "error")));
+$("export-excel").addEventListener("click", () => {
+  try { exportExcelReport(); } catch (error) { setStatus(error.message, "error"); }
+});
 $("clear-discovery").addEventListener("click", () => clearDiscoveryAndHighlights().catch((error) => setStatus(error.message, "error")));
 $("audit-scope").addEventListener("change", updateScope);
 chrome.runtime.onMessage.addListener((message, sender) => {
