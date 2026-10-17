@@ -70,6 +70,22 @@ test("the service worker is the durable receiver for selection events", async ()
   assert.match(source, /selectionCancelled/);
 });
 
+test("popup supports contextual all-component discovery without starting batch audits", async () => {
+  const [html, popup, background, discovery] = await Promise.all([
+    readFile(new URL("../chrome-mvp/popup.html", import.meta.url), "utf8"),
+    readFile(new URL("../chrome-mvp/popup.js", import.meta.url), "utf8"),
+    readFile(new URL("../chrome-mvp/background.js", import.meta.url), "utf8"),
+    readFile(new URL("../chrome-mvp/discover-components.js", import.meta.url), "utf8")
+  ]);
+  assert.match(html, /value="all">All supported components/);
+  assert.match(html, /id="discovery-list"/);
+  assert.match(popup, /discover-components\.js/);
+  assert.match(popup, /latestDiscovery/);
+  assert.match(background, /createSelectionContext\(message\.discovery, sender\.tab\)/);
+  assert.match(discovery, /strategies\.discover\(document\)/);
+  assert.match(discovery, /uniqueElementSelector/);
+});
+
 test("groups repeated rule findings without merging distinct targets or expectations", () => {
   const findings = [
     { id: "combo:dynamic:dynamic[0].assertions[0]", status: "fail", target: "input", expected: "true", scenario: "opens", message: "first" },

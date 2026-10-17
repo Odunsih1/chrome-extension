@@ -18,19 +18,26 @@ chrome.runtime.onMessage.addListener((message, sender) => {
     chrome.storage.local.set({ selectionCancelled: true, latestSelectionError: "" });
   } else if (message.type === "aria-ease-selection-ready") {
     chrome.storage.local.set({ selectionCancelled: false, latestSelectionError: "" });
+  } else if (message.type === "aria-ease-discovery") {
+    const discovery = createSelectionContext(message.discovery, sender.tab);
+    chrome.storage.local.set({ latestDiscovery: discovery, latestDiscoveryError: "" });
+  } else if (message.type === "aria-ease-discovery-error") {
+    chrome.storage.local.set({ latestDiscovery: null, latestDiscoveryError: message.message });
   }
 });
 
-async function clearSelectionForTab(tabId) {
-  const { latestSelection } = await chrome.storage.local.get({ latestSelection: null });
-  if (latestSelection?.tabId !== tabId) return;
-  await chrome.storage.local.set({ latestSelection: null, latestSelectionError: "", selectionCancelled: false });
+async function clearPageStateForTab(tabId) {
+  const { latestSelection, latestDiscovery } = await chrome.storage.local.get({ latestSelection: null, latestDiscovery: null });
+  const updates = {};
+  if (latestSelection?.tabId === tabId) Object.assign(updates, { latestSelection: null, latestSelectionError: "", selectionCancelled: false });
+  if (latestDiscovery?.tabId === tabId) Object.assign(updates, { latestDiscovery: null, latestDiscoveryError: "" });
+  if (Object.keys(updates).length) await chrome.storage.local.set(updates);
 }
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (changeInfo.status === "loading" || changeInfo.url) clearSelectionForTab(tabId).catch(() => {});
+  if (changeInfo.status === "loading" || changeInfo.url) clearPageStateForTab(tabId).catch(() => {});
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
-  clearSelectionForTab(tabId).catch(() => {});
+  clearPageStateForTab(tabId).catch(() => {});
 });

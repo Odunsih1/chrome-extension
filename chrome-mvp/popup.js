@@ -6,6 +6,7 @@ import { clearSessionToken, migrateLegacyToken, saveSessionToken } from "./token
 const DEFAULT_SERVICE_URL = "http://127.0.0.1:4317";
 const $ = (id) => document.getElementById(id);
 let selection = null;
+let discovery = null;
 
 function setStatus(message, kind = "") {
   $("status").textContent = message;
@@ -56,6 +57,16 @@ async function activeTab() {
 
 async function startSelection() {
   const tab = await activeTab();
+  if ($("audit-scope").value === "all") {
+    clearDiscovery();
+    await chrome.storage.local.set({ latestDiscovery: null, latestDiscoveryError: "" });
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ["component-strategies.js", "selector.js", "discover-components.js"]
+    });
+    setStatus("Scanning this page for supported components...");
+    return;
+  }
   clearSelection();
   await chrome.storage.local.set({ latestSelection: null, latestSelectionError: "", selectionCancelled: false });
   await chrome.scripting.executeScript({
@@ -65,8 +76,46 @@ async function startSelection() {
   setStatus("Hover over a combobox and click it. Press Escape to cancel.");
 }
 
+function showDiscovery(value) {
+  discovery = value;
+  $("audit-scope").value = "all";
+  $("select").textContent = "Scan page";
+  const targets = value.targets || [];
+  $("discovery-summary").textContent = `${targets.length} supported component${targets.length === 1 ? "" : "s"} found on this page.`;
+  $("discovery-list").replaceChildren(...targets.map((target) => {
+    const item = document.createElement("li");
+    item.textContent = `${target.label}: ${target.selector}`;
+    return item;
+  }));
+  const failures = value.errors || [];
+  $("discovery-errors").textContent = failures.length
+    ? `${failures.length} component${failures.length === 1 ? " was" : "s were"} omitted because a unique selector could not be generated.`
+    : "";
+  $("discovery").classList.remove("hidden");
+  $("result").classList.add("hidden");
+  setStatus("Component scan complete.", "success");
+}
+
+function clearDiscovery() {
+  discovery = null;
+  chrome.storage.local.set({ latestDiscovery: null, latestDiscoveryError: "" }).catch(() => {});
+  $("discovery").classList.add("hidden");
+  $("discovery-list").replaceChildren();
+  $("discovery-errors").textContent = "";
+}
+
+function updateScope() {
+  const all = $("audit-scope").value === "all";
+  $("select").textContent = all ? "Scan page" : "Select component";
+  if (all) clearSelection();
+  else clearDiscovery();
+  setStatus(all ? "Ready to scan this page." : "Ready to select a component.");
+}
+
 function showSelection(value) {
   selection = value;
+  $("audit-scope").value = "single";
+  $("select").textContent = "Select component";
   $("metadata").textContent = JSON.stringify(value, null, 2);
   $("selection").classList.remove("hidden");
   $("result").classList.add("hidden");
@@ -170,25 +219,40 @@ $("select").addEventListener("click", () => startSelection().catch((error) => se
 $("run").addEventListener("click", () => runAudit().catch((error) => setStatus(error.message, "error")));
 $("clear").addEventListener("click", clearSelection);
 $("clear-token").addEventListener("click", () => clearToken().catch((error) => setStatus(error.message, "error")));
+$("audit-scope").addEventListener("change", updateScope);
 chrome.runtime.onMessage.addListener((message, sender) => {
   if (message.type === "aria-ease-selection" && sender.tab) {
     showSelection(createSelectionContext(message.selection, sender.tab));
   }
   if (message.type === "aria-ease-selection-cancelled") setStatus("Selection cancelled.");
   if (message.type === "aria-ease-selection-error") setStatus(message.message, "error");
+  if (message.type === "aria-ease-discovery" && sender.tab) {
+    showDiscovery(createSelectionContext(message.discovery, sender.tab));
+  }
+  if (message.type === "aria-ease-discovery-error") setStatus(message.message, "error");
 });
 
 chrome.storage.onChanged.addListener((changes) => {
   if (changes.latestSelection?.newValue) showSelection(changes.latestSelection.newValue);
   if (changes.latestSelectionError?.newValue) setStatus(changes.latestSelectionError.newValue, "error");
   if (changes.selectionCancelled?.newValue) setStatus("Selection cancelled.");
+  if (changes.latestDiscovery?.newValue) showDiscovery(changes.latestDiscovery.newValue);
+  if (changes.latestDiscoveryError?.newValue) setStatus(changes.latestDiscoveryError.newValue, "error");
 });
 
 async function restoreSelectionState() {
   await settings();
-  const state = await chrome.storage.local.get({ latestSelection: null, latestSelectionError: "", selectionCancelled: false });
+  const state = await chrome.storage.local.get({
+    latestSelection: null,
+    latestSelectionError: "",
+    selectionCancelled: false,
+    latestDiscovery: null,
+    latestDiscoveryError: ""
+  });
   if (state.latestSelection) showSelection(state.latestSelection);
+  else if (state.latestDiscovery) showDiscovery(state.latestDiscovery);
   else if (state.latestSelectionError) setStatus(state.latestSelectionError, "error");
+  else if (state.latestDiscoveryError) setStatus(state.latestDiscoveryError, "error");
   else if (state.selectionCancelled) setStatus("Selection cancelled.");
 }
 

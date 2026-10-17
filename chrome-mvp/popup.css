@@ -55,6 +55,7 @@ label {
 }
 
 input,
+select,
 button {
   box-sizing: border-box;
   width: 100%;
@@ -65,18 +66,22 @@ button {
   font: inherit;
 }
 
-input {
+input,
+select {
   background: var(--card-bg-base);
   color: var(--text-primary);
 }
 
 input:hover,
-input:focus {
+input:focus,
+select:hover,
+select:focus {
   border-color: var(--card-hover-border);
   outline: none;
 }
 
 input:focus-visible,
+select:focus-visible,
 button:focus-visible,
 summary:focus-visible {
   outline: 2px solid var(--nav-hover-accent);
@@ -135,6 +140,8 @@ summary {
 .error { color: #713f12; }
 .success { color: #126b32; }
 .hidden { display: none; }
+#discovery-list { margin: 8px 0; padding-left: 20px; }
+#discovery-list li { margin: 6px 0; overflow-wrap: anywhere; }
 .finding {
   margin: 8px 0;
   padding: 10px;

@@ -15,9 +15,8 @@
     return `${tag}${classes.length ? `.${classes.join(".")}` : ""}`;
   }
 
-  function uniqueSelector(element, documentRef = element?.ownerDocument) {
-    if (!isComboboxElement(element)) throw new Error("Select an element with role=\"combobox\".");
-
+  function uniqueElementSelector(element, documentRef = element?.ownerDocument) {
+    if (!isElement(element)) throw new Error("A page element is required to generate a selector.");
     if (element.id && cssIdentifier(element.id)) {
       const idSelector = `#${element.id}`;
       if (documentRef.querySelectorAll(idSelector).length === 1) return idSelector;
@@ -39,7 +38,12 @@
       if (documentRef.querySelectorAll(candidate).length === 1) return candidate;
       current = current.parentElement;
     }
-    throw new Error("Could not generate a unique CSS selector for this combobox. Add a unique ID and retry.");
+    throw new Error("Could not generate a unique CSS selector for this component. Add a unique ID and retry.");
+  }
+
+  function uniqueSelector(element, documentRef = element?.ownerDocument) {
+    if (!isComboboxElement(element)) throw new Error("Select an element with role=\"combobox\".");
+    return uniqueElementSelector(element, documentRef);
   }
 
   function selectedMetadata(element, selector) {
@@ -63,5 +67,5 @@
     };
   }
 
-  globalThis.ariaEaseSelector = { isComboboxElement, uniqueSelector, selectedMetadata };
+  globalThis.ariaEaseSelector = { isComboboxElement, uniqueElementSelector, uniqueSelector, selectedMetadata };
 })();

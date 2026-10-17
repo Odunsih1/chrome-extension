@@ -40,6 +40,15 @@ test("rejects non-combobox elements", () => {
   assert.throws(() => globalThis.ariaEaseSelector.uniqueSelector(input), /role="combobox"/);
 });
 
+test("generates selectors for non-combobox discovery targets", () => {
+  const tablist = element({ id: "account-tabs", role: "tablist" });
+  tablist.ownerDocument = {
+    documentElement: {},
+    querySelectorAll(selector) { return selector === "#account-tabs" ? [tablist] : []; }
+  };
+  assert.equal(globalThis.ariaEaseSelector.uniqueElementSelector(tablist), "#account-tabs");
+});
+
 test("extracts selector and accessible metadata", () => {
   const combobox = element({
     id: "search",
