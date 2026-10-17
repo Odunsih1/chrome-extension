@@ -45,9 +45,10 @@ test("selection code prevents page activation and cleans up its listeners", asyn
   assert.match(source, /\.catch\(\(\) => \{\}\)/);
 });
 
-test("popup stores token in extension storage and sends bearer authentication", async () => {
+test("popup uses session-scoped token storage and sends bearer authentication", async () => {
   const source = await readFile(new URL("../chrome-mvp/popup.js", import.meta.url), "utf8");
-  assert.match(source, /chrome\.storage\.local/);
+  assert.match(source, /saveSessionToken/);
+  assert.match(source, /clearSessionToken/);
   assert.match(source, /Authorization: `Bearer \$\{token\}`/);
   assert.match(source, /targetSelector/);
 });

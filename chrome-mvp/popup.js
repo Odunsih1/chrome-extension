@@ -1,6 +1,7 @@
 import { buildAuditRequest, responseError, validateTargetUrl } from "./request.mjs";
 import { summarizeResult, renderFindingsHtml } from "./findings.mjs";
 import { createSelectionContext, validateSelectionContext } from "./selection-context.mjs";
+import { clearSessionToken, migrateLegacyToken, saveSessionToken } from "./token-storage.mjs";
 
 const DEFAULT_SERVICE_URL = "http://127.0.0.1:4317";
 const $ = (id) => document.getElementById(id);
@@ -20,9 +21,12 @@ function normalizeServiceUrl(value) {
 }
 
 async function settings() {
-  const values = await chrome.storage.local.get({ serviceUrl: DEFAULT_SERVICE_URL, token: "", root: "" });
+  const [values, token] = await Promise.all([
+    chrome.storage.local.get({ serviceUrl: DEFAULT_SERVICE_URL, root: "" }),
+    migrateLegacyToken()
+  ]);
   $("service-url").value = values.serviceUrl;
-  $("token").value = values.token;
+  $("token").value = token;
   $("root").value = values.root;
 }
 
@@ -32,8 +36,15 @@ async function saveSettings() {
   const root = $("root").value.trim();
   if (!token) throw new Error("Enter the bearer token printed by the local service.");
   if (!root) throw new Error("Enter an approved project root.");
-  await chrome.storage.local.set({ serviceUrl, token, root });
-  return { serviceUrl, token, root };
+  const savedToken = await saveSessionToken(token);
+  await chrome.storage.local.set({ serviceUrl, root });
+  return { serviceUrl, token: savedToken, root };
+}
+
+async function clearToken() {
+  await clearSessionToken();
+  $("token").value = "";
+  setStatus("Bearer token cleared for this browser session.");
 }
 
 async function activeTab() {
@@ -125,6 +136,10 @@ async function runAudit() {
   });
   let body;
   try { body = await response.json(); } catch { throw new Error(`Service returned HTTP ${response.status} without JSON.`); }
+  if (response.status === 401) {
+    await clearSessionToken();
+    $("token").value = "";
+  }
   if (!response.ok && response.status !== 422) {
     throw new Error(response.status === 400
       ? "The audit request was rejected. Check the URL, project root, and selector."
@@ -151,6 +166,7 @@ async function runAudit() {
 $("select").addEventListener("click", () => startSelection().catch((error) => setStatus(error.message, "error")));
 $("run").addEventListener("click", () => runAudit().catch((error) => setStatus(error.message, "error")));
 $("clear").addEventListener("click", clearSelection);
+$("clear-token").addEventListener("click", () => clearToken().catch((error) => setStatus(error.message, "error")));
 chrome.runtime.onMessage.addListener((message, sender) => {
   if (message.type === "aria-ease-selection" && sender.tab) {
     showSelection(createSelectionContext(message.selection, sender.tab));
