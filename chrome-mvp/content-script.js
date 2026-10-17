@@ -64,6 +64,7 @@
     document.removeEventListener("keydown", keydown, true);
     overlay.remove();
     delete window.ariaEaseSelector;
+    delete window.ariaEaseComponentStrategies;
     window.__ariaEaseSelectionActive = false;
   };
 
